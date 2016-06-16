@@ -56,12 +56,9 @@ func (o *OpenStates) AllMetadata() ([]StateMeta, error) {
 func (o *OpenStates) StateMetadata(st string) (*StateMeta, error) {
 	var ret *StateMeta
 	var err error
-	orig := st
-	if states.IsValidName(st) {
-		st, err = states.NameToAbbr(st)
-	}
-	if !states.IsValidAbbr(st) {
-		return ret, errors.New("Invalid State: " + orig)
+	st, err = states.ScrubToAbbr(st)
+	if err != nil {
+		return ret, err
 	}
 	var getVal []byte
 	vals := url.Values{}
@@ -84,16 +81,3 @@ func UnmarshalTimeString(s string, t *time.Time) error {
 	*t, err = time.Parse("2006-01-02 15:04:05", s)
 	return err
 }
-
-/*
-	resp, err := http.Get("http://openstates.org/api/v1/legislators/geo/?apikey=" + site.OpenStatesKey + "&lat=" + lat + "&long=" + lng)
-	if err != nil {
-		fmt.Fprint(w, "{\"status\":\"error\"}")
-		return
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	fmt.Fprint(w, string(body))
-	// http://openstates.org/api/v1/legislators/geo/?lat=35.79&long=-78.78
-	// https://sunlightlabs.github.io/openstates-api/legislators.html#examples/geo-lookup
-*/
