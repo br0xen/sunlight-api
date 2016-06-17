@@ -70,6 +70,20 @@ func (o *OpenStates) StateMetadata(st string) (*StateMeta, error) {
 	return ret, err
 }
 
+func (o *OpenStates) fixStateMetaTimes(m *StateMeta) error {
+	var err error
+	if err = UnmarshalTimeString(m.LatestCSVDateStr, &m.LatestCSVDate); err != nil {
+		return errors.New("No CSV Date")
+	}
+	if err = UnmarshalTimeString(m.LatestJSONDateStr, &m.LatestJSONDate); err != nil {
+		return errors.New("No JSON Date")
+	}
+	if err = UnmarshalTimeString(m.LatestUpdateStr, &m.LatestUpdate); err != nil {
+		return errors.New("No Latest Update Time")
+	}
+	return err
+}
+
 // UnmarshalTimeString Takes a time string and a pointer to a time object
 // and populates the time object with the value from the string
 func UnmarshalTimeString(s string, t *time.Time) error {

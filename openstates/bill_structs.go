@@ -52,11 +52,6 @@ type Action struct {
 	Actor   string   `json:"actor"`
 }
 
-// Source is a source in a bill
-type Source struct {
-	URL string `json:"url"`
-}
-
 // Sponsor is a sponsor on a bill
 type Sponsor struct {
 	LegID string `json:"leg_id"`

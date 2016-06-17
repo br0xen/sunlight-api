@@ -2,16 +2,49 @@ package openstates
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
-	"strconv"
-	"time"
 
 	"github.com/br0xen/sunlight-api/openstates/states"
 )
 
-// GetBillsWithParams returns all bills with parameters 'v'
-func (o *OpenStates) GetBillsWithParams(v url.Values) ([]Bill, error) {
+// SearchBills returns all bills with parameters 'v'
+// Valid Parameters:
+// * state					- Filter by state
+// * chamber				- Filter by chamber
+// * bill_id				- Only bills with id bill_id
+// * q							- Bills matching provided full text query
+// * search_window	- By default all bills are searched, but you
+//											can limit the search window with these:
+//		* all							- Default, include all sessions
+//		* term						- Only bills from the current term
+//		* session					- Only bills from the current session
+//		* session:2009		- Only bills from the session named 2009
+//		* term:2009-2011	- Only bills from the term named 2009-2011
+// * updated_since	- Only bills updated since the provided date
+// * sponsor_id			- Bills sponsored by a given legislator id
+// * subject				- Only bills categorized by OpenStates as
+//											belonging to this subject
+// * type						- Only bills of a given type
+//										('bill', 'resolution', etc.)
+// Additionally, 'sort' is a valid parameter, defaults to 'last'
+// Other sort options:
+// * first				- Oldest first
+// * last					- Newest first (default)
+// * signed				- Signed first
+// * passed_lower - Passed Lower first
+// * passed_upper - Passed Upper first
+// * updated_at		- Sort by updated_at time
+// * created_at		- Sort by created_at time
+//
+// The API will not return exceedingly large responses, so it may
+// be necessary to use 'page' and 'per_page' to control the # of
+// of results returned:
+// page			- Page of results, each of size per_page (defaults to 1)
+// per_page	- Number of results per page, is unlimited unless page is
+//							set, in which case it defaults to 50.
+func (o *OpenStates) SearchBills(v url.Values) ([]Bill, error) {
 	var ret []Bill
 	var err error
 	var getVal []byte
@@ -21,14 +54,7 @@ func (o *OpenStates) GetBillsWithParams(v url.Values) ([]Bill, error) {
 	err = json.Unmarshal(getVal, &ret)
 	if err == nil {
 		for i := range ret {
-			ret[i].CreatedAt, err = time.Parse("2006-01-02 15:04:05", ret[i].CreatedAtStr)
-			if err != nil {
-				fmt.Println("Error on idx: " + strconv.Itoa(i))
-				return ret, err
-			}
-			ret[i].UpdatedAt, err = time.Parse("2006-01-02 15:04:05", ret[i].UpdatedAtStr)
-			if err != nil {
-				fmt.Println("Error on idx: " + strconv.Itoa(i))
+			if err = o.fixBillTimes(&ret[i]); err != nil {
 				return ret, err
 			}
 		}
@@ -44,7 +70,7 @@ func (o *OpenStates) GetBillsForState(st string) ([]Bill, error) {
 	}
 	vals := url.Values{}
 	vals.Set("state", st)
-	return o.GetBillsWithParams(vals)
+	return o.SearchBills(vals)
 }
 
 // QueryBillsForState Does a search for bills with text 'q' in state 'st
@@ -56,7 +82,7 @@ func (o *OpenStates) QueryBillsForState(st string, q string) ([]Bill, error) {
 	vals := url.Values{}
 	vals.Set("state", st)
 	vals.Set("q", q)
-	return o.GetBillsWithParams(vals)
+	return o.SearchBills(vals)
 }
 
 func (o *OpenStates) getBillDetailForEndpoint(ep string) (*Bill, error) {
@@ -71,23 +97,7 @@ func (o *OpenStates) getBillDetailForEndpoint(ep string) (*Bill, error) {
 	err = json.Unmarshal(getVal, &ret)
 	ret.HasDetail = true
 	if err == nil {
-		if err = UnmarshalTimeString(ret.CreatedAtStr, &ret.CreatedAt); err != nil {
-			return ret, err
-		}
-		if err = UnmarshalTimeString(ret.UpdatedAtStr, &ret.UpdatedAt); err != nil {
-			return ret, err
-		}
-		UnmarshalTimeString(ret.ActionDates.PassedUpperStr, &ret.ActionDates.PassedUpper)
-		UnmarshalTimeString(ret.ActionDates.PassedLowerStr, &ret.ActionDates.PassedLower)
-		UnmarshalTimeString(ret.ActionDates.LastStr, &ret.ActionDates.Last)
-		UnmarshalTimeString(ret.ActionDates.SignedStr, &ret.ActionDates.Signed)
-		UnmarshalTimeString(ret.ActionDates.FirstStr, &ret.ActionDates.First)
-		for i := range ret.Actions {
-			UnmarshalTimeString(ret.Actions[i].DateStr, &ret.Actions[i].Date)
-		}
-		for i := range ret.Votes {
-			UnmarshalTimeString(ret.Votes[i].DateStr, &ret.Votes[i].Date)
-		}
+		err = o.fixBillTimes(ret)
 	}
 	return ret, err
 }
@@ -104,4 +114,26 @@ func (o *OpenStates) GetBillDetail(st, sess, name string) (*Bill, error) {
 // GetBillDetailFromID ...
 func (o *OpenStates) GetBillDetailFromID(id string) (*Bill, error) {
 	return o.getBillDetailForEndpoint("bills/" + id)
+}
+
+func (o *OpenStates) fixBillTimes(b *Bill) error {
+	var err error
+	if err = UnmarshalTimeString(b.CreatedAtStr, &b.CreatedAt); err != nil {
+		return errors.New("No Created At Time")
+	}
+	if err = UnmarshalTimeString(b.UpdatedAtStr, &b.UpdatedAt); err != nil {
+		return errors.New("No Updated At Time")
+	}
+	UnmarshalTimeString(b.ActionDates.PassedUpperStr, &b.ActionDates.PassedUpper)
+	UnmarshalTimeString(b.ActionDates.PassedLowerStr, &b.ActionDates.PassedLower)
+	UnmarshalTimeString(b.ActionDates.LastStr, &b.ActionDates.Last)
+	UnmarshalTimeString(b.ActionDates.SignedStr, &b.ActionDates.Signed)
+	UnmarshalTimeString(b.ActionDates.FirstStr, &b.ActionDates.First)
+	for i := range b.Actions {
+		UnmarshalTimeString(b.Actions[i].DateStr, &b.Actions[i].Date)
+	}
+	for i := range b.Votes {
+		UnmarshalTimeString(b.Votes[i].DateStr, &b.Votes[i].Date)
+	}
+	return nil
 }

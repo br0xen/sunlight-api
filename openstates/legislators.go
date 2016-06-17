@@ -32,7 +32,9 @@ func (o *OpenStates) SearchLegislators(v url.Values) ([]Legislator, error) {
 	err = json.Unmarshal(getVal, &ret)
 	if err == nil {
 		for i := range ret {
-			o.fixLegislatorTimes(&ret[i])
+			if err = o.fixLegislatorTimes(&ret[i]); err != nil {
+				return ret, err
+			}
 		}
 	}
 	return ret, err

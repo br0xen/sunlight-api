@@ -10,25 +10,24 @@ type OpenStates struct {
 
 // StateMeta is all of the metadata for a state
 type StateMeta struct {
-	Name               string                   `json:"name"`
-	Abbr               string                   `json:"abbreviation"`
-	Chambers           map[string]StateChamber  `json:"chambers"`
-	FeatureFlags       []string                 `json:"feature_flags"`
-	CapitolTimezone    time.Location            `json:"-"`
-	CapitolTimezoneStr string                   `json:"capitol_timezone"`
-	ID                 string                   `json:"id"`
-	LatestCSVDate      time.Time                `json:"-"`
-	LatestCSVDateStr   string                   `json:"latest_csv_date"`
-	LatestCSVURL       string                   `json:"latest_csv_url"`
-	LatestJSONDate     time.Time                `json:"-"`
-	LatestJSONDateStr  string                   `json:"latest_json_date"`
-	LatestJSONURL      string                   `json:"latest_json_url"`
-	LatestUpdate       time.Time                `json:"-"`
-	LatestUpdateStr    string                   `json:"latest_update"`
-	LegislatureName    string                   `json:"legislature_name"`
-	LegislatureURL     string                   `json:"legislature_url"`
-	SessionDetails     map[string]SessionDetail `json:"session_details"`
-	Terms              []Term                   `json:"terms"`
+	Name              string                   `json:"name"`
+	Abbr              string                   `json:"abbreviation"`
+	Chambers          map[string]StateChamber  `json:"chambers"`
+	FeatureFlags      []string                 `json:"feature_flags"`
+	CapitolTimezone   string                   `json:"capitol_timezone"`
+	ID                string                   `json:"id"`
+	LatestCSVDate     time.Time                `json:"-"`
+	LatestCSVDateStr  string                   `json:"latest_csv_date"`
+	LatestCSVURL      string                   `json:"latest_csv_url"`
+	LatestJSONDate    time.Time                `json:"-"`
+	LatestJSONDateStr string                   `json:"latest_json_date"`
+	LatestJSONURL     string                   `json:"latest_json_url"`
+	LatestUpdate      time.Time                `json:"-"`
+	LatestUpdateStr   string                   `json:"latest_update"`
+	LegislatureName   string                   `json:"legislature_name"`
+	LegislatureURL    string                   `json:"legislature_url"`
+	SessionDetails    map[string]SessionDetail `json:"session_details"`
+	Terms             []Term                   `json:"terms"`
 }
 
 // StateChamber is a Chamber in the state's government
@@ -51,4 +50,9 @@ type Term struct {
 	StartYear int      `json:"start_year"`
 	Name      string   `json:"name"`
 	Sessions  []string `json:"sessions"`
+}
+
+// Source is a source in a bill/committee, etc.
+type Source struct {
+	URL string `json:"url"`
 }
